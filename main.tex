@@ -135,12 +135,13 @@
 	Automatic Differentiation (AD) is the backbone of applied second order minimization schemes and used extensively for solving statistical inference problems.
 	% AD eliminates human error in implementing custom derivates from the equation.
 	Both often require forward and reverse mode differentiation for efficiency.
-	However, early AD frameworks did not support both and in 2013 this sparked the development of NIFTy, a Bayesian inference library with a (specialized) second order minimization scheme and a custom-built AD engine on top of NumPy.
+	However, early AD frameworks did not support both.
+	In 2013 this sparked the development of NIFTy, a Bayesian inference library with a (specialized) second order minimization scheme and a custom-built AD engine on top of NumPy.
 	In this talk we introduce how NIFTy realizes AD via linearization- and transposition-rules.
-	Furthermore, we discuss how performing second order minimization affects the choice of rematerialization strategies.
+	Furthermore, we discuss how using AD for second order minimization affects the choice of rematerialization strategies.
 	% NIFTy relies on the chain rule and the concept of linearizations.
 	% By transposing linearized functions, NIFTy enables both forward and reverse mode differentiation.
-	Attendees will learn the core concepts for building their own simple AD framework and why linearizations and transpositions are highly desirable for efficient second order minimization.
+	Attendees will learn core concepts for building their own simple AD framework and why linearizations and transpositions are highly desirable for efficient second order minimization.
 \end{abstract}
 
 \keywords{Forward mode, Reverse mode, Rematerialization strategies, Second order minimization, Statistical inference}
