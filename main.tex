@@ -1,0 +1,158 @@
+\documentclass[acmlarge,screen,12pt,review]{acmart}
+%% Commands for TeXCount
+%TC:macro \cite [option:text,text]
+%TC:macro \citep [option:text,text]
+%TC:macro \citet [option:text,text]
+%TC:envir table 0 1
+%TC:envir table* 0 1
+%TC:envir tabular [ignore] word
+%TC:envir displaymath 0 word
+%TC:envir math 0 word
+%TC:envir comment 0 0
+%%
+%%
+%% The first command in your LaTeX source must be the \documentclass command.
+%%%% Small single column format, used for CIE, CSUR, DTRAP, JACM, JDIQ, JEA, JERIC, JETC, PACMCGIT, TAAS, TACCESS, TACO, TALG, TALLIP (formerly TALIP), TCPS, TDSCI, TEAC, TECS, TELO, THRI, TIIS, TIOT, TISSEC, TIST, TKDD, TMIS, TOCE, TOCHI, TOCL, TOCS, TOCT, TODAES, TODS, TOIS, TOIT, TOMACS, TOMM (formerly TOMCCAP), TOMPECS, TOMS, TOPC, TOPLAS, TOPS, TOS, TOSEM, TOSN, TQC, TRETS, TSAS, TSC, TSLP, TWEB.
+% \documentclass[acmsmall]{acmart}
+
+%%%% Large single column format, used for IMWUT, JOCCH, PACMPL, POMACS, TAP, PACMHCI
+% \documentclass[acmlarge,screen]{acmart}
+
+%%%% Large double column format, used for TOG
+% \documentclass[acmtog, authorversion]{acmart}
+
+%% Fonts used in the template cannot be substituted; margin
+%% adjustments are not allowed.
+%%
+%% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+\setcopyright{none}
+\copyrightyear{}
+\acmYear{}
+\acmDOI{}
+
+\acmConference{}
+\acmBooktitle{}
+\acmPrice{}
+\acmISBN{}
+
+% Do not print the ACM references
+\settopmatter{printacmref=false}
+% Hack to disable copyright text at the bottom
+\renewcommand\footnotetextcopyrightpermission[1]{}
+
+%% The majority of ACM publications use numbered citations and
+%% references.  The command \citestyle{authoryear} switches to the
+%% "author year" style.
+%%\citestyle{acmauthoryear}
+
+\begin{document}
+
+%%
+%% The "title" command has an optional parameter,
+%% allowing the author to define a "short title" to be used in page headers.
+\title{NIFTy: The Why and How of Building AD from Scratch}
+
+%%
+%% The "author" command and its associated commands are used to define
+%% the authors and their affiliations.
+%% Of note is the shared affiliation of the first two authors, and the
+%% "authornote" and "authornotemark" commands
+%% used to denote shared contribution to the research.
+\author{Andrija Kostic}
+\authornote{Authors contributed equally to this work.}
+\email{akostic@mpa-garching.mpg.de}
+\author{David Outland}
+\authornotemark[1]
+\email{doutland@mpa-garching.mpg.de}
+\author{Gordian Edenhofer}
+\authornotemark[1]
+\email{edh@mpa-garching.mpg.de}
+\orcid{0000-0003-3122-4894}
+\author{Jakob Roth}
+\authornotemark[1]
+\email{roth@mpa-garching.mpg.de}
+\author{Lukas Platz}
+\authornotemark[1]
+\email{lplatz@mpa-garching.mpg.de}
+\author{Margret Westerkamp}
+\authornotemark[1]
+\email{margret@mpa-garching.mpg.de}
+\author{Martin Reinecke}
+\authornotemark[1]
+\email{martin@mpa-garching.mpg.de}
+\author{Massin Guerdi}
+\authornotemark[1]
+\email{mmg@mpa-garching.mpg.de}
+\author{Matteo Guardiani}
+\authornotemark[1]
+\email{matteani@mpa-garching.mpg.de}
+\author{Philipp Arras}
+\authornotemark[1]
+\email{parras@mpa-garching.mpg.de}
+\author{Philipp Frank}
+\authornotemark[1]
+\email{philipp@mpa-garching.mpg.de}
+\author{Reimar Leike}
+\authornotemark[1]
+\email{reimar@mpa-garching.mpg.de}
+\author{Torsten Enßlin}
+\authornotemark[1]
+\email{ensslin@mpa-garching.mpg.de}
+\author{Vincent Eberle}
+\authornotemark[1]
+\email{veberle@mpa-garching.mpg.de}
+\affiliation{%
+  \institution{Max Planck Institute for Astrophysics}
+  \streetaddress{Karl-Schwarzschild-Straße 1}
+  \city{Garching bei München}
+  \state{Bavaria}
+  \country{DE}
+  \postcode{85748}
+}
+
+\renewcommand{\shortauthors}{Enßlin, et al.}
+
+% Submission Details
+% The title and kind of contribution
+% The list of authors and their affiliations; please indicate who of the authors intends to attend the workshop if already known.
+% The abstract of the talk that allows reviewers to assess its relevance for the venue; consider including a short paragraph on what the attendees can get from this contribution.
+% Logistical requirements of the contribution: description of the format if it doesn't fit into any of the categories; required room setting and equipment; any restriction on date and time; for panels and roundtables, names of the panelists or moderators.
+
+% Topic Slot: Learning from other automatic differentiation systems applicable to Enzyme/LLVM.
+% Contribution Format: technical talks (regular presentation format, 20-30 minutes questions included);
+
+\begin{abstract}
+	\textbf{Kind of contribution}: technical talk
+	\\\noindent
+	\textbf{Attendee}: Gordian Edenhofer
+
+	\vspace{1em}
+	\noindent
+	Automatic Differentiation (AD) is the backbone of applied second order minimization schemes and used extensively for solving statistical inference problems.
+	% AD eliminates human error in implementing custom derivates from the equation.
+	Both often require forward and reverse mode differentiation for efficiency.
+	However, early AD frameworks did not support both and in 2013 this sparked the development of NIFTy, a Bayesian inference library with a (specialized) second order minimization scheme and a custom-built AD engine on top of NumPy.
+	In this talk we introduce how NIFTy realizes AD via linearization- and transposition-rules.
+	Furthermore, we discuss how performing second order minimization affects the choice of rematerialization strategies.
+	% NIFTy relies on the chain rule and the concept of linearizations.
+	% By transposing linearized functions, NIFTy enables both forward and reverse mode differentiation.
+	Attendees will learn the core concepts for building their own simple AD framework and why linearizations and transpositions are highly desirable for efficient second order minimization.
+\end{abstract}
+
+\keywords{Forward mode, Reverse mode, Rematerialization strategies, Second order minimization, Statistical inference}
+
+\maketitle
+
+\section*{Logistics}
+
+Beamer + white wall
+
+% \bibliographystyle{ACM-Reference-Format}
+% \bibliography{literature}
+
+\end{document}
+\endinput
