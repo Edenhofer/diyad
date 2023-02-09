@@ -1,0 +1,311 @@
+\documentclass[aspectratio=169,xcolor=dvipsnames]{beamer}
+\usepackage[utf8]{inputenc}  % Required for umlauts
+\usepackage[english]{babel}  % Language
+%\usepackage[sfdefault]{roboto}  % Enable sans serif font roboto
+%\usepackage{libertine}  % Enable this on Windows to allow for microtype
+\usepackage[T1]{fontenc}  % Required for output of umlauts in PDF
+
+\usepackage{mathtools,bbold}  % Required for formulas
+\usepackage{siunitx}  % Give numbers units (with proper spacing)
+
+\usepackage{caption}  % Customize caption aesthetics
+\usepackage{tcolorbox}  % Fancy colored boxes
+\usepackage{color}
+\usepackage{xcolor}  % Highlighting
+\usepackage{soul}
+
+\usepackage{booktabs}  % Using pandas' LaTeX output
+\usepackage{multirow}  % Enable fancy table structure
+\usepackage{listings}  % Insert programming code
+\usepackage{lstautogobble}  % Cleaner indentation in TeX file of code blocks within LaTeX blocks
+
+\usepackage{graphicx}  % Required to insert images
+\usepackage{subcaption}  % Enable sub-figure
+\usepackage[space]{grffile}  % Insert images baring a filename which contains spaces
+\usepackage{float}  % Allow to forcefully set the location of an object
+% Include external standalone files such as Tikz graphics; requires `-shell-escape`
+\usepackage{standalone}
+\usepackage{tikz}  % Fancy drawing environment
+\usepackage{pgfplots}  % Functions in Tikz
+\usepackage[]{algorithm2e}  % Format fancy algorithms
+
+\usepackage[tracking=true]{microtype} % Required to change character spacing
+
+\usepackage[backend=biber,autocite=footnote,style=authoryear-icomp,sorting=none,doi=false,isbn=false,url=false,eprint=false]{biblatex}
+\usepackage{csquotes}  % Ensure proper quotation of texts with babel and polyglossia with biblatex
+\usepackage{hyperref}  % Insert clickable references
+
+\usepackage{datetime}  % Flexible date specification
+
+\usepackage{geometry}
+\usepackage{scrextend}  % Allow arbitrary indentation
+
+\usepackage{appendixnumberbeamer}  % Fancy page numbering excluding the appendix
+
+% Compile notes into a separate file readable by pdfpc using a custom package which overwrite the `note` macro
+\usepackage{pdfpcnotes}
+% NOTE: Adding "noframenumbering" as argument to the first slide confuses `pdfpc`; see https://github.com/pdfpc/pdfpc/issues/367
+
+\usetikzlibrary{patterns}
+\usetikzlibrary{arrows}
+\usetikzlibrary{matrix}
+\usetikzlibrary{hobby}
+\usetikzlibrary{shapes.misc}
+\usetikzlibrary{shapes.callouts}
+\pgfmathdeclarefunction{gauss}{2}{%
+	\pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+
+\addbibresource{literature.bib}
+\renewcommand{\footnotesize}{\tiny}
+%\renewcommand*{\bibfont}{\scriptsize}
+
+\newcommand{\leadingzero}[1]{\ifnum#1<10 0\the#1\else\the#1\fi}
+\newcommand{\todayddmmyyyy}{\leadingzero{\day}.\leadingzero{\month}.\the\year}
+\newcommand{\mathcolorbox}[2]{\colorbox{#1}{$\displaystyle #2$}}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\makeatletter
+% Fix subfig in beamer style presentation
+\let\@@magyar@captionfix\relax
+
+% Insert [short title] for \section in ToC
+\patchcmd{\beamer@section}{{#2}{\the\c@page}}{{#1}{\the\c@page}}{}{}
+% Insert [short title] for \section in Navigation
+\patchcmd{\beamer@section}{{\the\c@section}{\secname}}{{\the\c@section}{#1}}{}{}
+% Insert [short title] for \subsection in ToC
+\patchcmd{\beamer@subsection}{{#2}{\the\c@page}}{{#1}{\the\c@page}}{}{}
+% Insert [short title] for \subsection in Navigation
+\patchcmd{\beamer@subsection}{{\the\c@subsection}{#2}}{{\the\c@subsection}{#1}}{}{}
+\makeatother
+
+\definecolor{dodgerblue}{rgb}{0.06, 0.44, 0.8}
+\setbeamercolor{tableofcontents}{fg=dodgerblue}
+\setbeamercolor{section in toc}{fg=black}
+\setbeamercolor{subsection in toc}{fg=black}
+\setbeamercolor{block title}{fg=black}
+\setbeamercolor{qed symbol}{fg=black}
+\setbeamercolor{enumerate item}{fg=black}
+\setbeamercolor{itemize item}{fg=black}
+\setbeamercolor{itemize subitem}{fg=black}
+\setbeamercolor{title}{fg=dodgerblue}
+\setbeamerfont{title}{size=\LARGE}
+\setbeamertemplate{title page}{%
+	\vbox{}
+	\begin{centering}
+		\begin{beamercolorbox}[sep=8pt,center]{title}
+			\usebeamerfont{title}\inserttitle\par%
+			\ifx\insertsubtitle\@empty%
+			\else%
+				\vspace{0.25em}
+				{\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}%
+			\fi%
+		\end{beamercolorbox}%
+		\vspace{1em}\par
+		\begin{beamercolorbox}[sep=8pt,center]{author}
+			\usebeamerfont{author}\insertauthor%
+		\end{beamercolorbox}
+		\begin{beamercolorbox}[sep=8pt,center]{institute}
+			\usebeamerfont{institute}\insertinstitute%
+		\end{beamercolorbox}
+		\begin{beamercolorbox}[sep=8pt,center]{date}
+			\usebeamerfont{date}\insertdate%
+		\end{beamercolorbox}%\vskip0.5em
+	\end{centering}
+}
+\setbeamercolor{frametitle}{fg=dodgerblue}
+\setbeamerfont{frametitle}{size=\LARGE}
+\setbeamerfont{framesubtitle}{size=\small}
+\setbeamertemplate{frametitle}{%
+	\nointerlineskip%
+	\hspace*{0.45em}
+	% Other decent options are: `center`
+	\begin{beamercolorbox}[ht=4em,sep=1em,wd=\paperwidth]{frametitle}
+		\usebeamerfont{framesubtitle}
+		\hspace{-0.3em}\strut\insertframetitle\strut%
+		\\
+		\usebeamerfont{frametitle}
+		\strut\insertframesubtitle\strut%
+	\end{beamercolorbox}
+}
+\setbeamercolor{footline}{fg=gray}
+\setbeamercolor{date in head/foot}{fg=gray}
+\setbeamercolor{author in head/foot}{fg=gray}
+\setbeamercolor{section in head/foot}{fg=gray}
+\setbeamerfont{footline}{size=\tiny}
+\setbeamertemplate{footline}[text line]{%
+	\leavevmode%
+	\hspace*{-3.2em}
+	\hbox{%
+		\begin{beamercolorbox}[wd=.33\paperwidth,ht=1em,dp=0.5em,left]{date in head/foot}%
+			\hspace{1.5em}
+			\usebeamerfont{date in head/foot}\insertshortdate
+		\end{beamercolorbox}%
+		\begin{beamercolorbox}[wd=.33\paperwidth,ht=1em,dp=0.5em,center]{author in head/foot}%
+			\usebeamerfont{author in head/foot}\insertshortauthor
+		\end{beamercolorbox}%
+		\begin{beamercolorbox}[wd=.33\paperwidth,ht=1em,dp=0.5em,right]{section in head/foot}%
+			\usebeamerfont{date in head/foot}
+			\insertframenumber{} %/ \inserttotalframenumber\hspace*{1em}  % NOTE, excessive for a 12 min. talk
+			\hspace{1.5em}
+		\end{beamercolorbox}
+	}
+}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize item}{$\bullet$}
+\setbeamertemplate{itemize subitem}{$\circ$}
+\captionsetup{font=scriptsize,labelfont={bf,scriptsize}}
+
+% Customize code blocks
+\definecolor{dodgerblue}{rgb}{0.06, 0.44, 0.8}
+\definecolor{dodgerred}{rgb}{0.93, 0.24, 0.26}
+\lstset{basicstyle=\ttfamily,
+	breaklines=true,
+	showstringspaces=false,
+	commentstyle=\color{dodgerred},
+	keywordstyle=\color{dodgerblue},
+	frame=none,
+	frameround=ffff,
+	autogobble=true
+}
+\lstset{language=Python,
+	basicstyle=\ttfamily\scriptsize,
+	rulecolor=\color{black},
+	tabsize=2,
+}
+
+\title{NIFTy: The Why and How of Building AD from Scratch}
+\subtitle{}
+\author[Gordian Edenhofer]{%
+	{\href{mailto:gordian.edenhofer@gmail.com}{Gordian Edenhofer}}\inst{1,2,3}
+}
+\institute[LMU]{%
+	\inst{1}Max Planck Institute for Astrophysics, Garching \\
+	\inst{2}Faculty of Physics, LMU, Munich \\
+	\inst{3}Center for Astrophysics $\vert$ Harvard \& Smithsonian, Boston \\
+}
+\date[EnzymeCon]{Enzyme Conference 2023, \formatdate{23}{02}{2023}}
+\subject{}
+
+\begin{document}
+
+% NOTES
+% * Introduce myself!!!
+% * Do NOT talk about TOC for a 12 min. talk
+
+\pagenumbering{arabic}
+
+\begin{frame}[plain]
+	\titlepage%
+	\note{%
+		* From astrometric and photometric data to 3D dust
+	}
+\end{frame}
+
+% Submitted Abstract
+%
+% Automatic Differentiation (AD) is the backbone of applied second order
+% minimization schemes and used extensively for solving statistical inference
+% problems. Both often require forward and reverse mode differentiation for
+% efficiency. However, early AD frameworks did not support both. In 2013 this
+% sparked the development of NIFTy, a Bayesian inference library with a
+% (specialized) second order minimization scheme and a custom-built AD engine on
+% top of NumPy. In this talk we introduce how NIFTy realizes AD via
+% linearization- and transposition-rules. Furthermore, we discuss how using AD
+% for second order minimization affects the choice of rematerialization
+% strategies. Attendees will learn core concepts for building their own simple
+% AD framework and why linearizations and transpositions are highly desirable
+% for efficient second order minimization.
+
+\section{AD in Astrophysical Imaging}  % Background
+\frame[plain,noframenumbering]{\vfill\centering\tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/hide]\vfill}
+
+\subsection{What}  % Introduction, Background
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	\begin{itemize}
+		\item TODO: Big Astro stuff
+		\item TODO: eventually optimize a cost function
+		\item TODO: need AD to do so efficiently
+	\end{itemize}
+\end{frame}
+
+\subsection{Problems}  % Problem, Goal
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	\begin{itemize}
+		\item TODO: until recently no AD in python
+		\item TODO: our kind of optimization (approx 2nd order)
+		\item TODO: weird 2nd order minimization and not just gradients
+		\item TODO: state why weird!!! (cite Fisher metric paper)
+		\item TODO: give numbers of \#Hessian calls, \#grad calls
+	\end{itemize}
+
+	\note{* TODO}
+	% \footcitetext{Selig2013,Steiniger2019}
+\end{frame}
+
+\section{Linearizations on top of NumPy}  % Methodology
+\frame[plain,noframenumbering]{\vfill\centering\tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/hide]\vfill}
+
+\subsection{Idea}
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: Let's wrap NumPy
+\end{frame}
+
+\subsection{Linearizations}
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: show abstract class?
+	TODO: need to define what happens if jvp
+	TODO: needs to define what happens if vjp
+\end{frame}
+
+\subsection{Linearizations}
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: demo stupid class wrapping
+\end{frame}
+
+\subsection{Linearizations for minimization objective}
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: chaining linearization
+\end{frame}
+
+\section{Numerical Information Field Theory}  % Result
+\frame[plain,noframenumbering]{\vfill\centering\tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/hide]\vfill}
+
+\subsection{Linearizations in NIFTy}
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: why NIFTy
+\end{frame}
+
+\subsection{Advantages of NIFTY-like Linearizations}
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: convenience of python and speed
+	TODO: custom code
+	TODO: make bottle necks go brrr with C++
+\end{frame}
+
+\end{document}

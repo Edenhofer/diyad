@@ -1,0 +1,34 @@
+# Ignore backup files
+*~
+
+# Ignore LaTeX auxiliary files
+*.pdfpc
+*.aux
+*.bbl
+*.blg
+*.idx
+*.ind
+*.lof
+*.lot
+*.out
+*.toc
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.ist
+*.fls
+*.log
+*.nav
+*.snm
+*.dvi
+*.vrb
+*.fdb_latexmk
+*.bcf
+*.run.xml
+*.synctex.gz
+*.synctex(busy)
+__latexindent_temp.tex
+literature_filecontents_gen.bib
