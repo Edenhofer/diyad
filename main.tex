@@ -226,9 +226,17 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
+	TODO: picture of 3D dust here
+\end{frame}
+
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
 	\begin{itemize}
 		\item TODO: Big Astro stuff
 		\item TODO: eventually optimize a cost function
+		\item TODO: give example cost function
 		\item TODO: need AD to do so efficiently
 	\end{itemize}
 \end{frame}
@@ -239,19 +247,31 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{itemize}
-		\item TODO: until recently no AD in python
+		\item TODO: state examplary cost function again
+		\item TODO: until ``recently'' no AD in python
+		\item TODO: weird 2nd order minimization and **not just gradients**
 		\item TODO: our kind of optimization (approx 2nd order)
-		\item TODO: weird 2nd order minimization and not just gradients
 		\item TODO: state why weird!!! (cite Fisher metric paper)
 		\item TODO: give numbers of \#Hessian calls, \#grad calls
 	\end{itemize}
 
-	\note{* TODO}
+	TODO: Solution: DIY AD -> NIFTy
+
+	\note{* NIFTy custom AD for fast Fisher metric application}
+	\note{* rest of the talk will focus on how we do this and what makes it efficient for our kind of problems}
 	% \footcitetext{Selig2013,Steiniger2019}
 \end{frame}
 
 \section{Linearizations on top of NumPy}  % Methodology
 \frame[plain,noframenumbering]{\vfill\centering\tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/hide]\vfill}
+
+\subsection{Example}
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: Introduce dust example in 3D (?): exp -> weighting + LOS -> reduction
+\end{frame}
 
 \subsection{Idea}
 \begin{frame}
@@ -259,6 +279,29 @@
 	\framesubtitle{\insertsubsection}
 
 	TODO: Let's wrap NumPy
+	TODO: what if just could ducktape numpy-like operators together + chain rule
+\end{frame}
+
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: briefly recap forward AD
+	TODO: briefly recap backwards AD
+	TODO: transposed of backwards AD for efficient forward AD
+
+	\note{* non-linearities are made much cheaper here; imagine e.g. and exp in the forward model}
+\end{frame}
+
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: scheme on example cost function: build linearizations of all components
+	TODO: chain linearizations for forward pass
+	TODO: transpose linearizations for backwards pass
+
+	\note{* this has been rediscovered over and over; there is a dedicated JAX paper on this...}
 \end{frame}
 
 \subsection{Linearizations}
@@ -271,7 +314,6 @@
 	TODO: needs to define what happens if vjp
 \end{frame}
 
-\subsection{Linearizations}
 \begin{frame}
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
@@ -279,12 +321,49 @@
 	TODO: demo stupid class wrapping
 \end{frame}
 
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: remember original problem of applying Fisher (without needing gradient or function)
+	TODO: linearization differ from JVP/VJP in that they do not evaluate the original function
+\end{frame}
+
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: get back to original demo of chained cost function
+	TODO: get linearizations by putting linearization into model and successively amending it
+\end{frame}
+
 \subsection{Linearizations for minimization objective}
 \begin{frame}
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: chaining linearization
+	TODO: show demo in action
+
+	\note{* congrats, you now understand the DIY AD in NIFTy}
+\end{frame}
+
+\subsection{Checkpointing}
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: checkpointing is crucial as \#parameter and constants in model is huge
+	TODO: checkpointing is done DIY and as efficient as desired
+	TODO: no duplicate memory allocations for transposition
+
+	\note{* looking at you JAX for excessive memory allocation for transpositions}
+\end{frame}
+
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	TODO: demo example of rematerialization with weighted sum
 \end{frame}
 
 \section{Numerical Information Field Theory}  % Result
@@ -295,7 +374,8 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: why NIFTy
+	TODO: fast if individal computations are expensive and done efficiently outside of python
+	TODO: describe typical model: 10M+ parameters + FFT + exp dominates thus doing poor man's AD is fine
 \end{frame}
 
 \subsection{Advantages of NIFTY-like Linearizations}
