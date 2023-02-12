@@ -222,23 +222,41 @@
 \frame[plain,noframenumbering]{\vfill\centering\tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/hide]\vfill}
 
 \subsection{What}  % Introduction, Background
-\begin{frame}
-	\frametitle{\insertsection}
-	\framesubtitle{\insertsubsection}
+{
+\setbeamercolor{background canvas}{bg=black}
+\begin{frame}[plain,noframenumbering]
+	\begin{tikzpicture}[overlay, remember picture, every text node part/.style={align=center}]
+		\node[anchor=north west,xshift=-0.15cm,yshift=-0.25cm] at (current page.north west)
+		{\includegraphics[width=1.145\textwidth,keepaspectratio]{{res/galactic_dust_off_axis_perspective}}};
+	\end{tikzpicture}
 
-	TODO: picture of 3D dust here
+	\note{* What I really want to do is 3D dust mapping}
+	\note{* Meaning: statistical inference on lots of data with complicated model}
+	\note{* 10M data points that can not simply be batched like in ML but need to be processed jointly}
+	\note{* I want to do statistical inference}
+	\note{* Our approach to do so is by solving big optimization problem}
+	\note{* Optimizations get faster if one uses derivates}
 \end{frame}
+}
 
 \begin{frame}
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
 	\begin{itemize}
-		\item TODO: Big Astro stuff
-		\item TODO: eventually optimize a cost function
-		\item TODO: give example cost function
-		\item TODO: need AD to do so efficiently
+		\item Statistical inference on $10+$M dofs $\rightarrow$ optimizing cost function
+		\item Cost function of data $d$ and parameters $x$
+		\begin{align*}
+			H(x) &= \ell'(d, x) + x^2
+			\\ &= \ell(f(x)) + x^2
+		\end{align*}
+		\item From theory: Hessian $H''(x, y) \approx J_f^\dagger \hat{L'} J_f + 1$ {\footnotesize\color{gray}with $J_f$ the Jacobian of $f$ and some simple matrix $\hat{L'}$}
+		% \pause
+		\item[$\rightarrow$] $2^\text{nd}$ order minimization
 	\end{itemize}
+
+	\note{* split of cost function is important}
+	\note{* having to use full data + easily accessible Hessian approx. screams for second order AD}
 \end{frame}
 
 \subsection{Problems}  % Problem, Goal
@@ -247,17 +265,18 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{itemize}
-		\item TODO: state examplary cost function again
-		\item TODO: until ``recently'' no AD in python
-		\item TODO: weird 2nd order minimization and **not just gradients**
-		\item TODO: our kind of optimization (approx 2nd order)
-		\item TODO: state why weird!!! (cite Fisher metric paper)
-		\item TODO: give numbers of \#Hessian calls, \#grad calls
+		\item Many ($\approx10^4$) calls to $H''(x, y) \approx J_f^\dagger \hat{L'} J_f + 1$, few ($\approx10^3$) to $\nabla_x H(x)$
+		\item Special in that applies linear operator $J$ but few non-linearities
+		\item Few AD toolkits cater to need for efficient $J$
+		% \item[$\rightarrow$] More than just gradients
 	\end{itemize}
 
-	TODO: Solution: DIY AD -> NIFTy
+	\begin{center}
+		Numerical Information Field Theory = DIY AD + (bunch of statistics)
+	\end{center}
 
-	\note{* NIFTy custom AD for fast Fisher metric application}
+	\note{* specialized 2nd order minimization}
+	\note{* NIFTy custom AD for fast Hessian application}
 	\note{* rest of the talk will focus on how we do this and what makes it efficient for our kind of problems}
 	% \footcitetext{Selig2013,Steiniger2019}
 \end{frame}
@@ -270,7 +289,32 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: Introduce dust example in 3D (?): exp -> weighting + LOS -> reduction
+	% TODO: merge sum and weighting into weighted sum? and include correlated_field
+
+	\begin{equation*}  % TODO: built up successively
+		f(x) =
+		\sum_0^m
+		\circ
+		\ \text{weight}
+		\circ
+		\exp
+		\circ
+		\begin{bmatrix}
+			x_{00} & \dots & x_{0m} \\
+			\vdots & \ddots & \\
+			x_{n0} & \dots & x_{nm}
+		\end{bmatrix}
+	\end{equation*}
+
+	\vspace{1em}
+	\begin{center}
+		Constraints: skip non-linearities in $J_f$ and always compute weight on the fly
+	\end{center}
+
+	\note{* physics inspired model}
+	\note{* constraints are essential}
+	\note{* even current state-of-the-art AD models fail to fulfill them}
+	\note{* complain about JAX}
 \end{frame}
 
 \subsection{Idea}
@@ -278,18 +322,43 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: Let's wrap NumPy
-	TODO: what if just could ducktape numpy-like operators together + chain rule
+	Built implicit linear operator for Jacobian of f $J_f$ and its transpose $J_f^\dagger$
+	\vspace{1em}
+	\\ Constraints: skip non-linearities in $f$ and always compute weight on the fly
+
+	\vspace{3em}
+	\begin{columns}[T]
+		\begin{column}{0.48\textwidth}
+			\centering Forward mode (naive $J_f$)
+			\begin{itemize}
+				\item No memory overhead
+				\item Re-evaluating non-linearities
+			\end{itemize}
+		\end{column}
+		\begin{column}{0.48\textwidth}
+			\centering Reverse mode (naive $J_f^\dagger$)
+			\begin{itemize}
+				\item Memory overhead
+				\item No re-evaluating of non-linearities
+			\end{itemize}
+		\end{column}
+	\end{columns}
+
+	\note{* we want transpose of reverse mode}
+	\note{* but configurable reverse mode to compute parts on the fly}
 \end{frame}
 
 \begin{frame}
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: briefly recap forward AD
-	TODO: briefly recap backwards AD
-	TODO: transposed of backwards AD for efficient forward AD
+	NIFTy
+	\begin{enumerate}
+		\item Associate every non-linearity with a corresponding linearization $J$ and $J^\dagger$
+		\item Use the chain-rule to built up an AD toolkit
+	\end{enumerate}
 
+	\note{* Transposed of backwards pass for efficient forward AD}
 	\note{* non-linearities are made much cheaper here; imagine e.g. and exp in the forward model}
 \end{frame}
 
@@ -297,52 +366,151 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: scheme on example cost function: build linearizations of all components
-	TODO: chain linearizations for forward pass
-	TODO: transpose linearizations for backwards pass
+	\begin{equation*}
+		f(x) =
+		\sum_0^m
+		\circ
+		\ \text{weight}
+		\circ
+		\exp
+		\circ
+		\begin{bmatrix}
+			x_{00} & \dots & x_{0m} \\
+			\vdots & \ddots & \\
+			x_{n0} & \dots & x_{nm}
+		\end{bmatrix}
+	\end{equation*}
+
+	$\sum_0^m$: $\sum_0^m$, outer-product
+	\\ weight: weight, adjoint weigthing
+	\\ $\exp$: multiplication with $\exp(x^{(0)})$, multiplication with $\exp(x^{(0)})$
+
+	\vspace{2em}
+
+	$J_f = TODO$
+	\\ $J_f^\dagger = TODO$
 
 	\note{* this has been rediscovered over and over; there is a dedicated JAX paper on this...}
 \end{frame}
 
 \subsection{Linearizations}
-\begin{frame}
+\begin{frame}[fragile]
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: show abstract class?
-	TODO: need to define what happens if jvp
-	TODO: needs to define what happens if vjp
+	\begin{lstlisting}[language=python,escapechar=!]
+		class Linearization():
+			def __init__(self, primals, fwd=lambda x: x, bwd=lambda y: y):
+				self.p = primals
+				self._fwd, self,_bwd = fwd, bwd
+
+			def __call__(self, primals):
+				return self._fwd(primals)
+
+			@property
+			def T(self):
+				return self.__class__(None, self._bwd, self._fwd)
+	\end{lstlisting}
+
+	\note{* linearization needs to know position as to amend it}
+	\note{* linearization needs to forward pass = J_f}
+	\note{* linearization needs to backward pass = J_f^+}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	\begin{lstlisting}[language=python,escapechar=!]
+		def exp(self, pl):
+			if isinstance(pl, Linearization):
+				y = np.exp(pl.p)
+				fwd = lambda y: x_new * pl(y)
+				bwd = lambda y_T: pl.T(y_T) * x_new
+				return Linearization(y, fwd, bwd)
+			return np.exp(pl)
+	\end{lstlisting}
+
+	\begin{lstlisting}[language=python,escapechar=!]
+		x0 = np.arange(3, 3)
+		y = exp(x0)
+		j = exp(Linearization(x0))
+
+		j = TODO
+	\end{lstlisting}
+
+	\note{* Note how the linearization and its adjoin is successively amended}
+	\note{* Amending relies on closures}
 \end{frame}
 
 \begin{frame}
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: demo stupid class wrapping
+	\begin{enumerate}
+		\item[$\checkmark$] Associate every non-linearity with a corresponding linearization $J$ and $J^\dagger$
+		\item[$\checkmark$] Use the chain-rule to built up an AD toolkit
+	\end{enumerate}
+
+	\note{* linearization differ from JVP/VJP in that they do not evaluate the original function}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: remember original problem of applying Fisher (without needing gradient or function)
-	TODO: linearization differ from JVP/VJP in that they do not evaluate the original function
-\end{frame}
+	\begin{equation*}
+		f(x) =
+		\sum_0^m
+		\circ
+		\ \text{weight}
+		\circ
+		\exp
+		\circ
+		\begin{bmatrix}
+			x_{00} & \dots & x_{0m} \\
+			\vdots & \ddots & \\
+			x_{n0} & \dots & x_{nm}
+		\end{bmatrix}
+	\end{equation*}
 
-\begin{frame}
-	\frametitle{\insertsection}
-	\framesubtitle{\insertsubsection}
+	$\sum_0^m$: $\sum_0^m$, outer-product
+	\\ weight: weight, adjoint weigthing
+	\\ $\exp$: multiplication with $\exp(x^{(0)})$, multiplication with $\exp(x^{(0)})$
 
-	TODO: get back to original demo of chained cost function
-	TODO: get linearizations by putting linearization into model and successively amending it
+	\vspace{2em}
+
+	$J_f = TODO$
+	\\ $J_f^\dagger = TODO$
+
+	\note{* get back to original demo of chained cost function}
+	\note{* get linearizations by putting linearization into model and successively amending it}
 \end{frame}
 
 \subsection{Linearizations for minimization objective}
-\begin{frame}
+\begin{frame}[fragile]
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: show demo in action
+	\begin{lstlisting}[language=python,escapechar=!]
+		def exp(self, pl):
+			...
+
+		def weight(self, pl):
+			...
+
+		def sum(self, pl):
+			...
+	\end{lstlisting}
+
+	\begin{lstlisting}[language=python,escapechar=!]
+		f = lambda x: sum(weight(exp(x)))
+
+		x0 = np.ones(3, 4)
+		y, jac = f(Linearization(x0, lambda x: x, lambda x: x))
+		jac(x0)
+		jac.T(y)
+	\end{lstlisting}
 
 	\note{* congrats, you now understand the DIY AD in NIFTy}
 \end{frame}
@@ -352,40 +520,87 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: checkpointing is crucial as \#parameter and constants in model is huge
-	TODO: checkpointing is done DIY and as efficient as desired
-	TODO: no duplicate memory allocations for transposition
+	Checkpointing a.k.a. rematerialization strategy = storing versus recomputing values required for AD
 
+	\begin{itemize}
+		\item Crucial as \#parameter and constants in astrophysical models can be huge
+		\item $J_f$ and $J_f^\dagger$ can almost always share constants
+		\item Computation versus memory tradeoff impossible in general $\rightarrow$ needs user input
+	\end{itemize}
+
+	\note{* DIY in NIFTy}
+	\note{* Memory versus computation tradeoff }
 	\note{* looking at you JAX for excessive memory allocation for transpositions}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: demo example of rematerialization with weighted sum
+	\begin{lstlisting}[language=python,escapechar=!]
+		def weight(self, pl):
+			if isinstance(pl, Linearization):
+				def fwd(x): return weight(pl(x))
+				def bwd(x): return weight(pl.T(x))
+				return Linearization(pl(x), fwd, bwd)
+			# Super memory-intensive computation that should be
+			# rematerialization at all costs
+			weights = np.linspace(1, 10, pl.size).reshape(pl.shape)
+			return weights * pl
+	\end{lstlisting}
 \end{frame}
 
 \section{Numerical Information Field Theory}  % Result
 \frame[plain,noframenumbering]{\vfill\centering\tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/hide]\vfill}
 
-\subsection{Linearizations in NIFTy}
-\begin{frame}
+% \subsection{Linearizations in NIFTy}
+% \begin{frame}
+% 	\frametitle{\insertsection}
+% 	\framesubtitle{\insertsubsection}
+
+% 	NIFTy is designed for large statistical models with 10+M dofs
+% 	\vspace{1em}
+% 	Computational cost dominated Hessian calls
+% 	\vspace{1em}
+% 	Hessian calls dominated by few inherently expensive operations (often \texttt{FFT})
+% 	\vspace{1em}
+% 	Fast if individal computations are expensive and done efficiently outside of python
+% \end{frame}
+
+
+\subsection{NIFTy AD}
+\begin{frame}[fragile]
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: fast if individal computations are expensive and done efficiently outside of python
-	TODO: describe typical model: 10M+ parameters + FFT + exp dominates thus doing poor man's AD is fine
+	\begin{lstlisting}[language=python,escapechar=!]
+		correlated_field = ...
+		model = ift.ContractionOperator(correlated_field.target) \
+		@ weight \
+		@ ift.exp \
+		@ correlated_field
+
+		j = model(ift.Linearization.make_var(x))
+	\end{lstlisting}
+
+	\note{* NIFTy is made for astrophysical inference}
+	\note{* NIFTy implements custom posterior approximation techniques}
+	\note{* NIFTy implements cool modeling tools for representing smoothness, e.g. for dust clouds}
 \end{frame}
 
-\subsection{Advantages of NIFTY-like Linearizations}
+\subsection{Advantages of NIFTy-like Linearizations}
 \begin{frame}
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	TODO: convenience of python and speed
-	TODO: custom code
-	TODO: make bottle necks go brrr with C++
+	\begin{itemize}
+		\item Convenience of python
+		\item Fast if individual computations are fast
+		\item Easy to amend and include custom code
+	\end{itemize}
+
+	\note{* make bottle necks go brrr with C++}
+	\note{* this is how we infer models with 10+M parameters}
 \end{frame}
 
 \end{document}
