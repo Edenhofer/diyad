@@ -244,13 +244,12 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{itemize}
-		\item Statistical inference on $10+$M dofs $\rightarrow$ optimizing cost function
-		\item Cost function of data $d$ and parameters $x$
+		\item Statistical inference on $10\mathrm{M}+$ parameters $\rightarrow$ optimizing cost function of data $d$ and parameters $x$
 		\begin{align*}
-			H(x) &= \ell'(d, x) + x^2
-			\\ &= \ell(f(x)) + x^2
+			H(x) &= \ell(d, x) + x^\dagger x
+			\\ &= \tilde{\ell}(d, f(x)) + x^\dagger x
 		\end{align*}
-		\item From theory: Hessian $H''(x, y) \approx J_f^\dagger \hat{L'} J_f + 1$ {\footnotesize\color{gray}with $J_f$ the Jacobian of $f$ and some simple matrix $\hat{L'}$}
+		\item From theory: Hessian $H''(x, y) \approx (J_{f,x}^\dagger \widehat{\tilde{L}} J_{f,x} + 1)(y)$ {\tiny\color{gray}$J_{f,x}$ the Jacobian of $f$ at $x$ and some matrix $\hat{L'}$}
 		% \pause
 		\item[$\rightarrow$] $2^\text{nd}$ order minimization
 	\end{itemize}
@@ -265,9 +264,9 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{itemize}
-		\item Many ($\approx10^4$) calls to $H''(x, y) \approx J_f^\dagger \hat{L'} J_f + 1$, few ($\approx10^3$) to $\nabla_x H(x)$
-		\item Special in that applies linear operator $J$ but few non-linearities
-		\item Few AD toolkits cater to need for efficient $J$
+		\item $2^\text{nd}$ order minimization: many ($\approx10^4$) calls to $H''(x, y) \approx (J_{f,x}^\dagger \widehat{\tilde{L}} J_{f,x} + 1)(y)$,
+		\\ few ($\approx10^3$) to $H'$
+		\item AD tools focus on fast $H'$, not on efficient $J_{f,x}$
 		% \item[$\rightarrow$] More than just gradients
 	\end{itemize}
 
@@ -275,6 +274,7 @@
 		Numerical Information Field Theory = DIY AD + (bunch of statistics)
 	\end{center}
 
+	\note{* Special in that applies linear operator J but few non-linearities}
 	\note{* specialized 2nd order minimization}
 	\note{* NIFTy custom AD for fast Hessian application}
 	\note{* rest of the talk will focus on how we do this and what makes it efficient for our kind of problems}
@@ -289,13 +289,9 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	% TODO: merge sum and weighting into weighted sum? and include correlated_field
-
 	\begin{equation*}  % TODO: built up successively
 		f(x) =
-		\sum_0^m
-		\circ
-		\ \text{weight}
+		\text{weighted\_reduction}
 		\circ
 		\exp
 		\circ
@@ -308,11 +304,12 @@
 
 	\vspace{1em}
 	\begin{center}
-		Constraints: skip non-linearities in $J_f$ and always compute weight on the fly
+		Constraints for efficient $J$s: skip non-linearities and customizable when possible
+		\\here: no $\exp$ and always compute weighted reduction on the fly
 	\end{center}
 
 	\note{* physics inspired model}
-	\note{* constraints are essential}
+	\note{* constraints are essential; exp about seven times slower than mul}
 	\note{* even current state-of-the-art AD models fail to fulfill them}
 	\note{* complain about JAX}
 \end{frame}
@@ -322,43 +319,20 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	Built implicit linear operator for Jacobian of f $J_f$ and its transpose $J_f^\dagger$
+	Built implicit linear operator for $J_{f,x}$ and its transpose $J_{f,x}^\dagger$
 	\vspace{1em}
-	\\ Constraints: skip non-linearities in $f$ and always compute weight on the fly
+	\\ Constraints for efficient $J$s: skip non-linearities and customizable when possible
 
 	\vspace{3em}
-	\begin{columns}[T]
-		\begin{column}{0.48\textwidth}
-			\centering Forward mode (naive $J_f$)
-			\begin{itemize}
-				\item No memory overhead
-				\item Re-evaluating non-linearities
-			\end{itemize}
-		\end{column}
-		\begin{column}{0.48\textwidth}
-			\centering Reverse mode (naive $J_f^\dagger$)
-			\begin{itemize}
-				\item Memory overhead
-				\item No re-evaluating of non-linearities
-			\end{itemize}
-		\end{column}
-	\end{columns}
-
-	\note{* we want transpose of reverse mode}
-	\note{* but configurable reverse mode to compute parts on the fly}
-\end{frame}
-
-\begin{frame}
-	\frametitle{\insertsection}
-	\framesubtitle{\insertsubsection}
-
 	NIFTy
 	\begin{enumerate}
 		\item Associate every non-linearity with a corresponding linearization $J$ and $J^\dagger$
 		\item Use the chain-rule to built up an AD toolkit
 	\end{enumerate}
 
+	\note{* NIFTy is like reverse mode AD but for forward mode (no dual numbers)}
 	\note{* Transposed of backwards pass for efficient forward AD}
+	\note{* but configurable reverse mode to compute parts on the fly}
 	\note{* non-linearities are made much cheaper here; imagine e.g. and exp in the forward model}
 \end{frame}
 
@@ -368,9 +342,7 @@
 
 	\begin{equation*}
 		f(x) =
-		\sum_0^m
-		\circ
-		\ \text{weight}
+		\text{weighted\_reduction}
 		\circ
 		\exp
 		\circ
@@ -381,16 +353,21 @@
 		\end{bmatrix}
 	\end{equation*}
 
-	$\sum_0^m$: $\sum_0^m$, outer-product
-	\\ weight: weight, adjoint weigthing
-	\\ $\exp$: multiplication with $\exp(x^{(0)})$, multiplication with $\exp(x^{(0)})$
+	\vspace{1em}
+	weighted\textunderscore{}reduction: linear operator $\rightarrow$ Jacobian is operator itself
+	\\ $\exp$: point-wise operator $\rightarrow$ Jacobian is diagonal operator
 
 	\vspace{2em}
+	\begin{center}
+		$J_{f,x} = J_{\text{wr},exp(x)} \cdot J_{\text{exp},x}$
+		\hspace{2em}
+		and
+		\hspace{2em}
+		$J_{f,x}^\dagger = J_{\text{exp},x}^\dagger \cdot J_{\text{wr},exp(x)}^\dagger$
+	\end{center}
 
-	$J_f = TODO$
-	\\ $J_f^\dagger = TODO$
-
-	\note{* this has been rediscovered over and over; there is a dedicated JAX paper on this...}
+	\note{* Jacobian of exp is a diagonal opertator}
+	\note{* weighted reduction is linear and derivative is operator itself}
 \end{frame}
 
 \subsection{Linearizations}
@@ -402,7 +379,7 @@
 		class Linearization():
 			def __init__(self, primals, fwd=lambda x: x, bwd=lambda y: y):
 				self.p = primals
-				self._fwd, self,_bwd = fwd, bwd
+				self._fwd, self._bwd = fwd, bwd
 
 			def __call__(self, primals):
 				return self._fwd(primals)
@@ -410,8 +387,14 @@
 			@property
 			def T(self):
 				return self.__class__(None, self._bwd, self._fwd)
+
+			def __repr__(self):
+				return f"{self.__class__.__name__}({self.p}, {self._fwd}, {self._bwd})"
+
+			# optional: implement infix arithmetics
 	\end{lstlisting}
 
+	\note{* I promised showing how to build your own AD: so here we go}
 	\note{* linearization needs to know position as to amend it}
 	\note{* linearization needs to forward pass = J_f}
 	\note{* linearization needs to backward pass = J_f^+}
@@ -422,25 +405,54 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{lstlisting}[language=python,escapechar=!]
-		def exp(self, pl):
+		def exp(pl):
 			if isinstance(pl, Linearization):
-				y = np.exp(pl.p)
-				fwd = lambda y: x_new * pl(y)
-				bwd = lambda y_T: pl.T(y_T) * x_new
+				y = exp(pl.p)
+				def fwd(x): return y * pl(x)
+				def bwd(x): return pl.T(x) * y
 				return Linearization(y, fwd, bwd)
 			return np.exp(pl)
 	\end{lstlisting}
 
 	\begin{lstlisting}[language=python,escapechar=!]
-		x0 = np.arange(3, 3)
+		x0 = 1e-2 * np.arange(0, 9).reshape(3, 3)
+		ones = np.ones((3, 3))
 		y = exp(x0)
-		j = exp(Linearization(x0))
-
-		j = TODO
+		j = exp(exp(Linearization(x0)))
+		j.T(ones)
 	\end{lstlisting}
 
 	\note{* Note how the linearization and its adjoin is successively amended}
 	\note{* Amending relies on closures}
+	\note{* Note, we reference `exp` back in Linearization call -> arbitrary order}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	\begin{lstlisting}[language=python,escapechar=!]
+		def weighted_reduction(pl):
+			n = 32
+			if isinstance(pl, Linearization):
+				y = weighted_reduction(pl.p)
+				def fwd(x): return weighted_reduction(pl(x))
+				def bwd(x): ...
+				return Linearization(y, fwd, bwd)
+			y, indices = np.zeros((n, )), np.arange(n) % pl.shape[0]
+			for i, idx in enumerate(indices):
+				super_expensive_weights = np.ones(pl.shape[1:])
+				y[i] = np.sum(pl[idx] * super_expensive_weights)
+			return y
+	\end{lstlisting}
+
+	\begin{lstlisting}[language=python,escapechar=!]
+		y2 = weighted_reduction(y)
+		j = weighted_reduction(Linearization(y))
+		j.T(y2)
+	\end{lstlisting}
+
+	\note{* Forward pass in linearization is operator itself}
 \end{frame}
 
 \begin{frame}
@@ -455,15 +467,14 @@
 	\note{* linearization differ from JVP/VJP in that they do not evaluate the original function}
 \end{frame}
 
+\subsection{Linearizations for minimization objective}
 \begin{frame}[fragile]
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
 	\begin{equation*}
 		f(x) =
-		\sum_0^m
-		\circ
-		\ \text{weight}
+		\text{weighted\_reduction}
 		\circ
 		\exp
 		\circ
@@ -474,42 +485,42 @@
 		\end{bmatrix}
 	\end{equation*}
 
-	$\sum_0^m$: $\sum_0^m$, outer-product
-	\\ weight: weight, adjoint weigthing
-	\\ $\exp$: multiplication with $\exp(x^{(0)})$, multiplication with $\exp(x^{(0)})$
-
 	\vspace{2em}
+	\begin{lstlisting}[language=python,escapechar=!]
+		x0 = 1e-2 * np.arange(0, 9).reshape(3, 3)
+		f0 = f(x0)
+		f_ones = np.ones(f0.shape)
 
-	$J_f = TODO$
-	\\ $J_f^\dagger = TODO$
+		j = f(Linearization(x0))
+		j(x0), j.T(f_ones)
+	\end{lstlisting}
 
-	\note{* get back to original demo of chained cost function}
-	\note{* get linearizations by putting linearization into model and successively amending it}
+	\note{* let's get back to original demo of chained cost function}
+	\note{* get linearizations by putting linearization into model}
 \end{frame}
 
-\subsection{Linearizations for minimization objective}
 \begin{frame}[fragile]
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
 	\begin{lstlisting}[language=python,escapechar=!]
-		def exp(self, pl):
-			...
-
-		def weight(self, pl):
-			...
-
-		def sum(self, pl):
-			...
+		def sum(pl): ...
+		def l_prime(pl): ...
 	\end{lstlisting}
 
+	\vspace{1em}
 	\begin{lstlisting}[language=python,escapechar=!]
-		f = lambda x: sum(weight(exp(x)))
+		def h(x):
+			return sum(f(x)) + sum(x**2)
 
-		x0 = np.ones(3, 4)
-		y, jac = f(Linearization(x0, lambda x: x, lambda x: x))
-		jac(x0)
-		jac.T(y)
+		def gradient(x):
+			return h(Linearization(x)).T(1.)
+
+		def hessian_at(x):
+			"""!$H''(x, y) \approx (J_{f,x}^\dagger \widehat{\tilde{L}} J_{f,x} + 1)(y)$!"""
+			j = f(Linearization(x))
+			def h_at_x(y): return j.T(l_prime(j(y))) + y
+			return h_at_x
 	\end{lstlisting}
 
 	\note{* congrats, you now understand the DIY AD in NIFTy}
@@ -524,12 +535,12 @@
 
 	\begin{itemize}
 		\item Crucial as \#parameter and constants in astrophysical models can be huge
-		\item $J_f$ and $J_f^\dagger$ can almost always share constants
+		\item $J_{f,x}$ and $J_{f,x}^\dagger$ can almost always share constants
 		\item Computation versus memory tradeoff impossible in general $\rightarrow$ needs user input
 	\end{itemize}
 
+	\note{* Memory versus computation tradeoff}
 	\note{* DIY in NIFTy}
-	\note{* Memory versus computation tradeoff }
 	\note{* looking at you JAX for excessive memory allocation for transpositions}
 \end{frame}
 
@@ -537,16 +548,25 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
+	\vspace{-1em}
 	\begin{lstlisting}[language=python,escapechar=!]
-		def weight(self, pl):
+		def weighted_reduction(pl):
+			n = 32
 			if isinstance(pl, Linearization):
-				def fwd(x): return weight(pl(x))
-				def bwd(x): return weight(pl.T(x))
-				return Linearization(pl(x), fwd, bwd)
-			# Super memory-intensive computation that should be
-			# rematerialization at all costs
-			weights = np.linspace(1, 10, pl.size).reshape(pl.shape)
-			return weights * pl
+				y = weighted_reduction(pl.p)
+				def fwd(x): return weighted_reduction(pl(x))
+				def bwd(x):
+					x_T, indices = np.zeros(pl.p.shape), np.arange(n) % pl.p.shape[0]
+					for i, idx in enumerate(indices):
+						super_expensive_weights = np.ones(pl.p.shape[1:])
+						x_T[idx] += x[i] * super_expensive_weights
+					return pl.T(x_T)
+				return Linearization(y, fwd, bwd)
+			y, indices = np.zeros((n, )), np.arange(n) % pl.shape[0]
+			for i, idx in enumerate(indices):
+				super_expensive_weights = np.ones(pl.shape[1:])
+				y[i] = np.sum(pl[idx] * super_expensive_weights)
+			return y
 	\end{lstlisting}
 \end{frame}
 
@@ -558,7 +578,7 @@
 % 	\frametitle{\insertsection}
 % 	\framesubtitle{\insertsubsection}
 
-% 	NIFTy is designed for large statistical models with 10+M dofs
+% 	NIFTy is designed for large statistical models with 10+M parameters
 % 	\vspace{1em}
 % 	Computational cost dominated Hessian calls
 % 	\vspace{1em}
@@ -575,10 +595,9 @@
 
 	\begin{lstlisting}[language=python,escapechar=!]
 		correlated_field = ...
-		model = ift.ContractionOperator(correlated_field.target) \
-		@ weight \
-		@ ift.exp \
-		@ correlated_field
+		model = ift.LOSResponse(correlated_field.target, ...) \
+			@ ift.exp \
+			@ correlated_field
 
 		j = model(ift.Linearization.make_var(x))
 	\end{lstlisting}
@@ -596,11 +615,11 @@
 	\begin{itemize}
 		\item Convenience of python
 		\item Fast if individual computations are fast
-		\item Easy to amend and include custom code
+		\item Easy to include custom code; very hackable
 	\end{itemize}
 
-	\note{* make bottle necks go brrr with C++}
-	\note{* this is how we infer models with 10+M parameters}
+	\note{* make bottlenecks go brrr with C++}
+	\note{* this is how we infer models with 10M+ parameters}
 \end{frame}
 
 \end{document}
