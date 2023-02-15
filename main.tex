@@ -247,8 +247,9 @@
 			H(x) &= \ell(d, x) + x^\dagger x
 			\\ &= \tilde{\ell}(d, f(x)) + x^\dagger x
 		\end{align*}
+		\pause
 		\item From theory: Hessian $H''(x, y) \approx (J_{f,x}^\dagger \widehat{\tilde{L}} J_{f,x} + 1)(y)$ {\tiny\color{gray}$J_{f,x}$ the Jacobian of $f$ at $x$ and some matrix $\hat{L'}$}
-		% \pause
+		\pause
 		\item[$\rightarrow$] $2^\text{nd}$ order minimization
 	\end{itemize}
 
@@ -265,12 +266,14 @@
 	\begin{itemize}
 		\item $2^\text{nd}$ order minimization: many ($\approx10^4$) calls to $H''(x, y) \approx (J_{f,x}^\dagger \widehat{\tilde{L}} J_{f,x} + 1)(y)$,
 		\\ few ($\approx10^3$) to $H'$
+		\pause
 		\item AD tools focus on fast $H'$, not on efficient $J_{f,x}$
 		% \item[$\rightarrow$] More than just gradients
 	\end{itemize}
 
+	\pause
 	\begin{center}
-		Numerical Information Field Theory = DIY AD + (bunch of statistics)
+		Numerical Information Field Theory = DIY AD + (lots of statistics)
 	\end{center}
 
 	\note{* Special in that applies linear operator J but few non-linearities}
@@ -303,15 +306,18 @@
 		\end{bmatrix}
 	\end{align*}
 
+	\pause
 	\vspace{1em}
 	\begin{center}
-		Constraints for efficient $J$s: skip non-linearities and customizable when necessary
+		Constraints for efficient $J$s: fast (skip non-linearities) and customizable when necessary
+		\pause
 		\vspace{0.5em}
 		\\ here: no $\exp$ and always compute weighted reduction on the fly
 	\end{center}
 
 	\note{* remember f fully defined the cost of our model; the rest doesn't matter}
 	\note{* physics inspired model}
+	\note{* "efficient" can be defined freely; we take efficient as meaning fast and customizable}
 	\note{* constraints are essential; exp about seven times slower than mul}
 	\note{* even current state-of-the-art AD models fail to fulfill them}
 	\note{* complain about JAX}
@@ -324,11 +330,13 @@
 
 	Built implicit linear operator for $J_{f,x}$ and its transpose $J_{f,x}^\dagger$
 
+	\pause
 	\vspace{3em}
 	NIFTy
 	\begin{enumerate}
 		\item Associate every non-linearity with a corresponding Jacobian $J$ and $J^\dagger$ $\rightarrow$ skip non-linearities
-		\item Use the chain-rule to built combined Jacobian together with its transpose $\rightarrow$ but make individual $J$ configurable
+		\pause
+		\item Use the chain-rule to built combined Jacobian together with its transpose $\rightarrow$ but make individual $J$ customizable
 	\end{enumerate}
 
 	\note{* Building linear operator sounds trivial but often not done if computing gradient}
@@ -413,6 +421,7 @@
 			return np.exp(pl)
 	\end{lstlisting}
 
+	\pause
 	\begin{lstlisting}[language=python,escapechar=!]
 		x0 = 1e-2 * np.arange(0, 9)
 		ones = np.ones((9, ))
@@ -447,6 +456,7 @@
 			return y
 	\end{lstlisting}
 
+	\pause
 	\begin{lstlisting}[language=python,escapechar=!]
 		y2 = weighted_reduction(y)
 		j = weighted_reduction(Linearization(y))
@@ -490,7 +500,7 @@
 	\begin{lstlisting}[language=python,escapechar=!]
 		def h(x):
 			return sum(f(x)) + sum(x**2)
-
+		!\pause!
 		def gradient(x):
 			return h(Linearization(x)).T(1.)
 
@@ -509,15 +519,15 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{itemize}
-		\item Skip non-linearities
+		\item Fast (by skipping non-linearities)
 		\begin{itemize}
-			\item NIFTy thinks in terms of linearizations
-			\item NIFTy has linearizations for almost all of NumPy
+			\item NIFTy thinks in terms of linearizations and wraps almost all of NumPy
 			\item Fast if individual computations are fast
 		\end{itemize}
-		\item Configurable Jacobians
+		\pause
+		\item Customizable Jacobians
 		\begin{itemize}
-			\item Model Jacobian is automatically derived via chain-rule
+			\item Jacobian of model is automatically derived via chain-rule
 			\item Trivial to redefine Jacobian for model via above schema
 			\item Convenience of python
 		\end{itemize}
