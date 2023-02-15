@@ -232,8 +232,6 @@
 
 	\note{* What I really want to do is 3D dust mapping}
 	\note{* Meaning: statistical inference on lots of data with complicated model}
-	\note{* 10M data points that can not simply be batched like in ML but need to be processed jointly}
-	\note{* I want to do statistical inference}
 	\note{* Our approach to do so is by solving big optimization problem}
 	\note{* Optimizations get faster if one uses derivates}
 \end{frame}
@@ -254,6 +252,7 @@
 		\item[$\rightarrow$] $2^\text{nd}$ order minimization
 	\end{itemize}
 
+	\note{* 10M data points that can not simply be batched like in ML but need to be processed jointly}
 	\note{* split of cost function is important}
 	\note{* having to use full data + easily accessible Hessian approx. screams for second order AD}
 \end{frame}
@@ -277,7 +276,8 @@
 	\note{* Special in that applies linear operator J but few non-linearities}
 	\note{* specialized 2nd order minimization}
 	\note{* NIFTy custom AD for fast Hessian application}
-	\note{* rest of the talk will focus on how we do this and what makes it efficient for our kind of problems}
+	\note{* rest of the talk will focus on how to AD efficiently for our kind of problems}
+	\note{* as a bonus you will learn how to build your own AD}
 	% \footcitetext{Selig2013,Steiniger2019}
 \end{frame}
 
@@ -289,25 +289,28 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	\begin{equation*}  % TODO: built up successively
-		f(x) =
+	\begin{align*}  % TODO: built up successively
+		f : R^{n} &\rightarrow R^k
+		\\ x &\mapsto
 		\text{weighted\_reduction}
 		\circ
 		\exp
 		\circ
 		\begin{bmatrix}
-			x_{00} & \dots & x_{0m} \\
-			\vdots & \ddots & \\
-			x_{n0} & \dots & x_{nm}
+			x_{0} \\
+			\vdots \\
+			x_{n}
 		\end{bmatrix}
-	\end{equation*}
+	\end{align*}
 
 	\vspace{1em}
 	\begin{center}
-		Constraints for efficient $J$s: skip non-linearities and customizable when possible
-		\\here: no $\exp$ and always compute weighted reduction on the fly
+		Constraints for efficient $J$s: skip non-linearities and customizable when necessary
+		\vspace{0.5em}
+		\\ here: no $\exp$ and always compute weighted reduction on the fly
 	\end{center}
 
+	\note{* remember f fully defined the cost of our model; the rest doesn't matter}
 	\note{* physics inspired model}
 	\note{* constraints are essential; exp about seven times slower than mul}
 	\note{* even current state-of-the-art AD models fail to fulfill them}
@@ -320,16 +323,15 @@
 	\framesubtitle{\insertsubsection}
 
 	Built implicit linear operator for $J_{f,x}$ and its transpose $J_{f,x}^\dagger$
-	\vspace{1em}
-	\\ Constraints for efficient $J$s: skip non-linearities and customizable when possible
 
 	\vspace{3em}
 	NIFTy
 	\begin{enumerate}
-		\item Associate every non-linearity with a corresponding linearization $J$ and $J^\dagger$
-		\item Use the chain-rule to built up an AD toolkit
+		\item Associate every non-linearity with a corresponding Jacobian $J$ and $J^\dagger$ $\rightarrow$ skip non-linearities
+		\item Use the chain-rule to built combined Jacobian together with its transpose $\rightarrow$ but make individual $J$ configurable
 	\end{enumerate}
 
+	\note{* Building linear operator sounds trivial but often not done if computing gradient}
 	\note{* NIFTy is like reverse mode AD but for forward mode (no dual numbers)}
 	\note{* Transposed of backwards pass for efficient forward AD}
 	\note{* but configurable reverse mode to compute parts on the fly}
@@ -347,15 +349,15 @@
 		\exp
 		\circ
 		\begin{bmatrix}
-			x_{00} & \dots & x_{0m} \\
-			\vdots & \ddots & \\
-			x_{n0} & \dots & x_{nm}
+			x_{0} \\
+			\vdots \\
+			x_{n}
 		\end{bmatrix}
 	\end{equation*}
 
 	\vspace{1em}
-	weighted\textunderscore{}reduction: linear operator $\rightarrow$ Jacobian is operator itself
-	\\ $\exp$: point-wise operator $\rightarrow$ Jacobian is diagonal operator
+	$\exp$: point-wise operator $\rightarrow$ Jacobian is diagonal operator
+	\\ weighted\textunderscore{}reduction: linear operator $\rightarrow$ Jacobian is operator itself
 
 	\vspace{2em}
 	\begin{center}
@@ -379,7 +381,7 @@
 		class Linearization():
 			def __init__(self, primals, fwd=lambda x: x, bwd=lambda y: y):
 				self.p = primals
-				self._fwd, self._bwd = fwd, bwd
+				self._fwd, self._bwd = fwd, bwd  # !$J$, $J^\dagger$!
 
 			def __call__(self, primals):
 				return self._fwd(primals)
@@ -387,9 +389,6 @@
 			@property
 			def T(self):
 				return self.__class__(None, self._bwd, self._fwd)
-
-			def __repr__(self):
-				return f"{self.__class__.__name__}({self.p}, {self._fwd}, {self._bwd})"
 
 			# optional: implement infix arithmetics
 	\end{lstlisting}
@@ -415,8 +414,8 @@
 	\end{lstlisting}
 
 	\begin{lstlisting}[language=python,escapechar=!]
-		x0 = 1e-2 * np.arange(0, 9).reshape(3, 3)
-		ones = np.ones((3, 3))
+		x0 = 1e-2 * np.arange(0, 9)
+		ones = np.ones((9, ))
 		y = exp(x0)
 		j = exp(exp(Linearization(x0)))
 		j.T(ones)
@@ -424,6 +423,8 @@
 
 	\note{* Note how the linearization and its adjoin is successively amended}
 	\note{* Amending relies on closures}
+	\note{* linearization differ from JVP/VJP in that they do not evaluate the original function}
+	\note{* Forward and backward have no exp in them}
 	\note{* Note, we reference `exp` back in Linearization call -> arbitrary order}
 \end{frame}
 
@@ -438,11 +439,11 @@
 				y = weighted_reduction(pl.p)
 				def fwd(x): return weighted_reduction(pl(x))
 				def bwd(x): ...
-				return Linearization(y, fwd, bwd)
-			y, indices = np.zeros((n, )), np.arange(n) % pl.shape[0]
+			p = pl.reshape(3, -1)
+			y, indices = np.zeros((n, )), np.arange(n) % p.shape[0]
 			for i, idx in enumerate(indices):
-				super_expensive_weights = np.ones(pl.shape[1:])
-				y[i] = np.sum(pl[idx] * super_expensive_weights)
+				super_expensive_weights = np.ones(p.shape[1:])
+				y[i] = np.sum(p[idx] * super_expensive_weights)
 			return y
 	\end{lstlisting}
 
@@ -455,39 +456,16 @@
 	\note{* Forward pass in linearization is operator itself}
 \end{frame}
 
-\begin{frame}
-	\frametitle{\insertsection}
-	\framesubtitle{\insertsubsection}
-
-	\begin{enumerate}
-		\item[$\checkmark$] Associate every non-linearity with a corresponding linearization $J$ and $J^\dagger$
-		\item[$\checkmark$] Use the chain-rule to built up an AD toolkit
-	\end{enumerate}
-
-	\note{* linearization differ from JVP/VJP in that they do not evaluate the original function}
-\end{frame}
-
 \subsection{Linearizations for minimization objective}
 \begin{frame}[fragile]
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	\begin{equation*}
-		f(x) =
-		\text{weighted\_reduction}
-		\circ
-		\exp
-		\circ
-		\begin{bmatrix}
-			x_{00} & \dots & x_{0m} \\
-			\vdots & \ddots & \\
-			x_{n0} & \dots & x_{nm}
-		\end{bmatrix}
-	\end{equation*}
-
-	\vspace{2em}
 	\begin{lstlisting}[language=python,escapechar=!]
-		x0 = 1e-2 * np.arange(0, 9).reshape(3, 3)
+		def f(x):
+			return weighted_reduction(exp(x))
+
+		x0 = 1e-2 * np.arange(0, 9)
 		f0 = f(x0)
 		f_ones = np.ones(f0.shape)
 
@@ -526,6 +504,29 @@
 	\note{* congrats, you now understand the DIY AD in NIFTy}
 \end{frame}
 
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	\begin{itemize}
+		\item Skip non-linearities
+		\begin{itemize}
+			\item NIFTy thinks in terms of linearizations
+			\item NIFTy has linearizations for almost all of NumPy
+			\item Fast if individual computations are fast
+		\end{itemize}
+		\item Configurable Jacobians
+		\begin{itemize}
+			\item Model Jacobian is automatically derived via chain-rule
+			\item Trivial to redefine Jacobian for model via above schema
+			\item Convenience of python
+		\end{itemize}
+	\end{itemize}
+
+	\note{* NIFTy is fast if model is dominated by computations and not python (think: pytorch)}
+	\note{* easy to amend if different desires}
+\end{frame}
+
 \subsection{Checkpointing}
 \begin{frame}
 	\frametitle{\insertsection}
@@ -540,6 +541,7 @@
 	\end{itemize}
 
 	\note{* Memory versus computation tradeoff}
+	\note{* NIFTy's design incentivizes sharing memory between forward and backward}
 	\note{* DIY in NIFTy}
 	\note{* looking at you JAX for excessive memory allocation for transpositions}
 \end{frame}
@@ -553,19 +555,20 @@
 		def weighted_reduction(pl):
 			n = 32
 			if isinstance(pl, Linearization):
-				y = weighted_reduction(pl.p)
 				def fwd(x): return weighted_reduction(pl(x))
 				def bwd(x):
-					x_T, indices = np.zeros(pl.p.shape), np.arange(n) % pl.p.shape[0]
+					p_shp = pl.p.reshape(3, -1).shape
+					x_T, indices = np.zeros(p_shp), np.arange(n) % p_shp[0]
 					for i, idx in enumerate(indices):
-						super_expensive_weights = np.ones(pl.p.shape[1:])
+						super_expensive_weights = np.ones(p_shp[1:])
 						x_T[idx] += x[i] * super_expensive_weights
-					return pl.T(x_T)
-				return Linearization(y, fwd, bwd)
-			y, indices = np.zeros((n, )), np.arange(n) % pl.shape[0]
+					return pl.T(x_T.reshape(pl.p.shape))
+				return Linearization(weighted_reduction(pl.p), fwd, bwd)
+			p = pl.reshape(3, -1)
+			y, indices = np.zeros((n, )), np.arange(n) % p.shape[0]
 			for i, idx in enumerate(indices):
-				super_expensive_weights = np.ones(pl.shape[1:])
-				y[i] = np.sum(pl[idx] * super_expensive_weights)
+				super_expensive_weights = np.ones(p.shape[1:])
+				y[i] = np.sum(p[idx] * super_expensive_weights)
 			return y
 	\end{lstlisting}
 \end{frame}
@@ -587,7 +590,6 @@
 % 	Fast if individal computations are expensive and done efficiently outside of python
 % \end{frame}
 
-
 \subsection{NIFTy AD}
 \begin{frame}[fragile]
 	\frametitle{\insertsection}
@@ -602,24 +604,33 @@
 		j = model(ift.Linearization.make_var(x))
 	\end{lstlisting}
 
-	\note{* NIFTy is made for astrophysical inference}
-	\note{* NIFTy implements custom posterior approximation techniques}
-	\note{* NIFTy implements cool modeling tools for representing smoothness, e.g. for dust clouds}
-\end{frame}
-
-\subsection{Advantages of NIFTy-like Linearizations}
-\begin{frame}
-	\frametitle{\insertsection}
-	\framesubtitle{\insertsubsection}
-
+	\vspace{1em}
 	\begin{itemize}
 		\item Convenience of python
 		\item Fast if individual computations are fast
 		\item Easy to include custom code; very hackable
 	\end{itemize}
 
+	\note{* NIFTy is made for astrophysical inference}
+	\note{* NIFTy implements custom posterior approximation techniques}
+	\note{* NIFTy implements cool modeling tools for representing smoothness, e.g. for dust clouds}
 	\note{* make bottlenecks go brrr with C++}
 	\note{* this is how we infer models with 10M+ parameters}
+\end{frame}
+
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	\begin{itemize}
+		\item Linearizations are amazing for our kind of $2^\text{nd}$ order minimization
+		\begin{itemize}
+			\item Skips non-linearities
+			\item By design incentivizes to share memory (and code) between $J$ and $J^\dagger$
+		\end{itemize}
+		\item Building your own AD is actually pretty simple
+	\end{itemize}
+
 \end{frame}
 
 \end{document}
