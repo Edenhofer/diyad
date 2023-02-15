@@ -293,7 +293,7 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	\begin{align*}  % TODO: built up successively
+	\begin{align*}
 		f : R^{n} &\rightarrow R^k
 		\\ x &\mapsto
 		\text{weighted\_reduction}
@@ -329,7 +329,7 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	Built implicit linear operator for $J_{f,x}$ and its transpose $J_{f,x}^\dagger$ exactly once at position $x$ and re-use them afterwards
+	Overload $f$ with a dispatching rule to yield its linearization as well as its transpose
 
 	\pause
 	\vspace{2em}
@@ -416,7 +416,7 @@
 			if isinstance(pl, Linearization):
 				y = exp(pl.p)
 				def fwd(x): return y * pl(x)
-				def bwd(x): return pl.T(x) * y
+				def bwd(x): return pl.T(y * x)
 				return Linearization(y, fwd, bwd)
 			return np.exp(pl)
 	\end{lstlisting}
@@ -606,19 +606,20 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{lstlisting}[language=python,escapechar=!]
-		correlated_field = ...
+		x = ...
 		model = ift.LOSResponse(correlated_field.target, ...) \
 			@ ift.exp \
-			@ correlated_field
+			@ x
 
-		j = model(ift.Linearization.make_var(x))
+		x0 = ...
+		j = model(ift.Linearization.make_var(x0))
 	\end{lstlisting}
 
 	\vspace{1em}
 	\begin{itemize}
 		\item Convenience of python
 		\item Fast if individual computations are fast
-		\item Easy to include custom code; very hackable
+		\item Easy to include custom code
 	\end{itemize}
 
 	\note{* NIFTy is made for astrophysical inference}
@@ -633,7 +634,7 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{itemize}
-		\item Linearizations are amazing for our kind of $2^\text{nd}$ order minimization
+		\item Linearizations are convenient concept for AD (especially for $2^\text{nd}$ order minimization)
 		\begin{itemize}
 			\item Skips non-linearities
 			\item By design incentivizes to share memory (and code) between $J$ and $J^\dagger$
