@@ -253,6 +253,7 @@
 		\item[$\rightarrow$] $2^\text{nd}$ order minimization
 	\end{itemize}
 
+	\note{* So far the problem seems pretty generic, but I promise you it is not}
 	\note{* 10M data points that can not simply be batched like in ML but need to be processed jointly}
 	\note{* split of cost function is important}
 	\note{* having to use full data + easily accessible Hessian approx. screams for second order AD}
@@ -328,16 +329,15 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	Built implicit linear operator for $J_{f,x}$ and its transpose $J_{f,x}^\dagger$
+	Built implicit linear operator for $J_{f,x}$ and its transpose $J_{f,x}^\dagger$ exactly once at position $x$ and re-use them afterwards
 
 	\pause
-	\vspace{3em}
-	NIFTy
-	\begin{enumerate}
-		\item Associate every non-linearity with a corresponding Jacobian $J$ and $J^\dagger$ $\rightarrow$ skip non-linearities
-		\pause
-		\item Use the chain-rule to built combined Jacobian together with its transpose $\rightarrow$ but make individual $J$ customizable
-	\end{enumerate}
+	\vspace{2em}
+	Associate every operation with a corresponding Jacobian $J$ and $J^\dagger$
+	\begin{itemize}
+		\item If called on numerical value; simply apply operation
+		\item If called on linearization; amend linearization of operation to input
+	\end{itemize}
 
 	\note{* Building linear operator sounds trivial but often not done if computing gradient}
 	\note{* NIFTy is like reverse mode AD but for forward mode (no dual numbers)}
