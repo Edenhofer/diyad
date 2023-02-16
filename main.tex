@@ -336,13 +336,13 @@
 
 	\pause
 	\vspace{1em}
-	Linearization $\leftrightarrow$ Jacobian is a function of two variables
+	Think of linearization $\leftrightarrow$ Jacobian as a function of two variables
 	\begin{itemize}
 		\item Primals $p$ for the location at which we linearize the function and
 		\item Tangents $t$ to which we apply the linearization at $p$
 	\end{itemize}
 	\pause
-	linearization of operator $\mathrm{op}$ at $p$ is an (implicit) matrix $J_{\mathrm{op},p}$, Jacobian at $p$ applied to $t$ is an (implicit) matrix-vector product $J_{\mathrm{op},p} \cdot t$
+	Linearization of operator $\mathrm{op}$ at $p$ is an (implicit) matrix $J_{\mathrm{op},p}$, Jacobian at $p$ applied to $t$ is an (implicit) matrix-vector product $J_{\mathrm{op},p} \cdot t$
 
 	\pause
 	\vspace{1em}
@@ -365,10 +365,16 @@
 		\\
 		\downarrow
 		\\
-		\mathrm{op}: p &\mapsto
+		\mathrm{op}: \mathrm{pl} &\mapsto
 		\begin{cases}
-			\mathrm{op}(p) & \text{if $p$ is of type numerics}
-			\\ \text{Linearization}(J_\mathrm{op} \cdot p,\quad p^\dagger \cdot J_\mathrm{op}^\dagger), & \text{if $p$ is of type linearization}
+			\mathrm{op}(\mathrm{pl}) & \text{if $\mathrm{pl}$ is of type numerics}
+			\\ \text{Linearization}
+				\begin{pmatrix}
+					\mathrm{op}(\mathrm{pl})
+					\\ J_{\mathrm{op},\mathrm{pl}_p} \cdot \mathrm{pl}
+					\\ \mathrm{pl}^\dagger \cdot J_{\mathrm{op},\mathrm{pl}_p}^\dagger
+				\end{pmatrix}
+				& \text{if $\mathrm{pl}$ is of type linearization}
 		\end{cases}
 	\end{align*}
 \end{frame}
@@ -422,8 +428,8 @@
 				self.p = p  # new primals after applying the non-linearized !$J$!
 				self._fwd, self._bwd = fwd, bwd  # !$J, J^\dagger$!
 
-			def __call__(self, t):  # tangents
-				return self._fwd(t)  # !$J \cdot t$!
+			def __call__(self, t):  # !$J \cdot t$! with tangents !$t$!
+				return self._fwd(t)
 
 			@property
 			def T(self):  # !$J^\dagger$!
