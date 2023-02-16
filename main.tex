@@ -444,12 +444,13 @@
 
 	\begin{lstlisting}[language=python,escapechar=!]
 		def exp(pl):
-			if isinstance(pl, Linearization):  # primals or linearization
-				y = exp(pl.p)  # new primals
-				def fwd(t): return y * pl(t)  # !\colorbox{yellow}{$J_{\exp,\mathrm{pl.p}} \cdot J_\mathrm{pl} \cdot t$}!
-				def bwd(t): return pl.T(y * t)  # !\colorbox{yellow}{$J^\dagger_\mathrm{pl} \cdot J^\dagger_{\exp,\mathrm{pl.p}} \cdot t$}!
-				return Linearization(y, fwd, bwd)
-			return np.exp(pl)  # new primals
+			if not isinstance(pl, Linearization):  # primals or linearization
+				return np.exp(pl)  # new primals
+			!\pause!
+			y = exp(pl.p)  # new primals
+			def fwd(t): return y * pl(t)  # !\colorbox{yellow}{chain rule: $J_{\exp,\mathrm{pl.p}} \cdot J_\mathrm{pl} \cdot t$}!
+			def bwd(t): return pl.T(y * t)  # !\colorbox{yellow}{chain rule: $J^\dagger_\mathrm{pl} \cdot J^\dagger_{\exp,\mathrm{pl.p}} \cdot t$}!
+			return Linearization(y, fwd, bwd)
 	\end{lstlisting}
 
 	\pause
@@ -474,16 +475,16 @@
 
 	\begin{lstlisting}[language=python,escapechar=!]
 		def weighted_reduction(pl, n=32, n_cols=3):
-			if isinstance(pl, Linearization):  # primals or linearization
-				y = weighted_reduction(pl.p)  # new primals
-				def fwd(x): return weighted_reduction(pl(x))  # !\colorbox{yellow}{ref. to self}!
-				def bwd(x): ...
-			p = pl.reshape(n_cols, -1)
-			y, indices = np.zeros((n, )), np.arange(n) % p.shape[0]
-			for i, idx in enumerate(indices):
-				super_expensive_weights = np.ones(p.shape[1:])  # large weights
-				y[i] = np.sum(p[idx] * super_expensive_weights)
-			return y  # new primals
+			if not isinstance(pl, Linearization):  # primals or linearization
+				p = pl.reshape(n_cols, -1)
+				y, indices = np.zeros((n, )), np.arange(n) % p.shape[0]
+				for i, idx in enumerate(indices):
+					super_expensive_weights = np.ones(p.shape[1:])  # large weights
+					y[i] = np.sum(p[idx] * super_expensive_weights)
+				return y  # new primals !\pause!
+			def fwd(x): return weighted_reduction(pl(x))  # !\colorbox{yellow}{ref. to self}!
+			def bwd(x): ...
+			return Linearization(weighted_reduction(pl.p), fwd, bwd)
 	\end{lstlisting}
 
 	\pause
@@ -590,24 +591,25 @@
 	\framesubtitle{\insertsubsection}
 
 	\vspace{-1em}
-	\begin{lstlisting}[language=python,escapechar=!,basicstyle=\fontsize{9}{10}\selectfont\ttfamily]
+	\begin{lstlisting}[language=python,escapechar=!,basicstyle=\fontsize{8}{9}\selectfont\ttfamily]
 		def weighted_reduction(pl, n=32, n_cols=3):
-			if isinstance(pl, Linearization):  # primals or linearization
-				def fwd(x): return weighted_reduction(pl(x))  # new primals
-				def bwd(x):  # !\colorbox{yellow}{implicit $J^\dagger_{\mathrm{wr},\mathrm{pl.p}}$ which re-computes all weights}!
-					p_shp = pl.p.reshape(n_cols, -1).shape
-					x_T, indices = np.zeros(p_shp), np.arange(n) % p_shp[0]
-					for i, idx in enumerate(indices):
-						super_expensive_weights = np.ones(p_shp[1:])
-						x_T[idx] += x[i] * super_expensive_weights
-					return pl.T(x_T.reshape(pl.p.shape))
-				return Linearization(weighted_reduction(pl.p), fwd, bwd)
-			p = pl.reshape(n_cols, -1)
-			y, indices = np.zeros((n, )), np.arange(n) % p.shape[0]
-			for i, idx in enumerate(indices):
-				super_expensive_weights = np.ones(p.shape[1:])  # large weights
-				y[i] = np.sum(p[idx] * super_expensive_weights)
-			return y  # new primals
+			if not isinstance(pl, Linearization):  # primals or linearization
+				p = pl.reshape(n_cols, -1)
+				y, indices = np.zeros((n, )), np.arange(n) % p.shape[0]
+				for i, idx in enumerate(indices):
+					super_expensive_weights = np.ones(p.shape[1:])  # large weights
+					y[i] = np.sum(p[idx] * super_expensive_weights)
+				return y  # new primals
+
+			def fwd(x): return weighted_reduction(pl(x))  # new primals
+			def bwd(x):  # !\colorbox{yellow}{implicit $J^\dagger_{\mathrm{wr},\mathrm{pl.p}}$ which re-computes all weights}!
+				p_shp = pl.p.reshape(n_cols, -1).shape
+				x_T, indices = np.zeros(p_shp), np.arange(n) % p_shp[0]
+				for i, idx in enumerate(indices):
+					super_expensive_weights = np.ones(p_shp[1:])
+					x_T[idx] += x[i] * super_expensive_weights
+				return pl.T(x_T.reshape(pl.p.shape))
+			return Linearization(weighted_reduction(pl.p), fwd, bwd)
 	\end{lstlisting}
 \end{frame}
 
