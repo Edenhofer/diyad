@@ -249,7 +249,7 @@
 		\pause
 		\item From theory: Hessian $\partial^\dagger \partial H \approx J_{f}^\dagger \widehat{\tilde{L}} J_{f} + 1$ with $J_{f}$ the Jacobian of $f$ and some $\widehat{\tilde{L}'}$
 		\pause
-		\item Functional form of cost function $\rightarrow$ \colorbox{yellow}{easily accessible H'' $\rightarrow$ $2^\text{nd}$ order minimization}
+		\item Form of cost function $\rightarrow$ \colorbox{yellow}{easily accessible $\approx \partial^\dagger \partial H$ $\rightarrow$ $2^\text{nd}$ order minimization}
 	\end{itemize}
 
 	\note{* So far the problem seems pretty generic, but I promise you it is not}
@@ -258,16 +258,16 @@
 	\note{* having to use full data + easily accessible Hessian approx. screams for second order AD}
 \end{frame}
 
-\subsection{Problems}  % Problem, Goal
+\subsection{Problem \& Goal}  % Problem, Goal
 \begin{frame}
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
 	\begin{itemize}
-		\item $2^\text{nd}$ order minimization $\rightarrow$ many ($\approx10^4$) calls to $\partial^\dagger \partial H$ few ($\approx10^3$) to $\partial H$
+		\item $2^\text{nd}$ order minimization $\rightarrow$ many ($\approx10^4$) calls to $J_{f}^\dagger \widehat{\tilde{L}} J_{f}$ few ($\approx10^3$) to $\partial H$
 		\begin{enumerate}
 			\item Get gradient
-			\item Apply inverse Hessian to gradient $\rightarrow$ needs many calls to $\partial^\dagger \partial H$
+			\item Apply inverse Hessian to gradient $\rightarrow$ needs many calls to $J_{f}^\dagger \widehat{\tilde{L}} J_{f}$
 			\item Take step \& repeat
 		\end{enumerate}
 		\pause
@@ -275,7 +275,6 @@
 		\begin{itemize}
 			\item JVP reevaluates non-linearities
 			\item VJP and JVP often do not share constants
-			\item Unsuitable for $\partial^\dagger \partial H$
 		\end{itemize}
 	\end{itemize}
 
@@ -336,19 +335,17 @@
 
 	\pause
 	\vspace{1em}
-	Think of linearization $\leftrightarrow$ Jacobian as a function of two variables
+	Think of \{linearization $\leftrightarrow$ Jacobian\} as a function of two variables
 	\begin{itemize}
 		\item Primals $p$ for the location at which we linearize the function and
 		\item Tangents $t$ to which we apply the linearization at $p$
 	\end{itemize}
 	\pause
-	Linearization of operator $\mathrm{op}$ at $p$ is an (implicit) matrix $J_{\mathrm{op},p}$, Jacobian at $p$ applied to $t$ is an (implicit) matrix-vector product $J_{\mathrm{op},p} \cdot t$
-
-	\pause
-	\vspace{1em}
-	We want linearization of $f$ for efficient $\partial^\dagger \partial H$
+	i.e. linearization of operator $\mathrm{op}$ at $p$ is an (implicit) matrix $J_{\mathrm{op},p}$,
+	\\ Jacobian at $p$ applied to $t$ is an (implicit) matrix-vector product $J_{\mathrm{op},p} \cdot t$
 
 	\note{* Note the dependency on the position!}
+	\note{* We want linearization of $f$ for efficient H''}
 	\note{* NIFTy is like reverse mode AD but for forward mode and reverse mode combined (no dual numbers)}
 	\note{* non-linearities are made much cheaper here; imagine e.g. and exp in the forward model}
 \end{frame}
@@ -358,7 +355,7 @@
 	\frametitle{\insertsection}
 	\framesubtitle{\insertsubsection}
 
-	Overload operations $\mathrm{op}$ in $f$ with a dispatching rule to yield its linearization as well as its transpose and chain them together using the chain rule
+	Overload operations $\mathrm{op}$ in $f$ with a dispatching rule to eagerly build linearization as well as its transpose (and use the chain rule to built the total linearization)
 
 	\begin{align*}
 		\mathrm{op}: p &\mapsto \mathrm{op}(p)
@@ -560,7 +557,7 @@
 			\item Fast if individual computations are fast
 		\end{itemize}
 		\pause
-		\item Implicit: NIFTy thinks in terms of linearizations and wraps almost all of NumPy
+		\item Implicit: NIFTy thinks in terms of applying linearizations (no matrix needed)
 		\pause
 		\item Customizable Jacobians
 		\begin{itemize}
