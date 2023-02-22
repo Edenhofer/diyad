@@ -316,7 +316,7 @@
 	\pause
 	\vspace{1em}
 	\begin{center}
-		$\partial^\dagger \partial H\approx J_{f}^\dagger \widehat{\tilde{L}} J_{f} + 1$ efficient iff $J_f \text{ and } J^\dagger_f$ efficient iff $J_f \text{ and } J^\dagger_f$ \colorbox{yellow}{fast} (skip non-linearities), \colorbox{yellow}{implicit} (no actual matrix) and \colorbox{yellow}{customizable} when necessary
+		$\partial^\dagger \partial H\approx J_{f}^\dagger \widehat{\tilde{L}} J_{f} + 1$ efficient iff $J_f \text{ and } J^\dagger_f$ efficient iff $J_f \text{ and } J^\dagger_f$ \colorbox{yellow}{fast} (e.g. skip non-linearities), \colorbox{yellow}{memory-efficient} (e.g. implicit) and \colorbox{yellow}{customizable} when necessary
 		\vspace{0.5em}
 		\\ here: no $\exp$ and always compute weighted reduction on the fly
 	\end{center}
@@ -557,7 +557,11 @@
 			\item Fast if individual computations are fast
 		\end{itemize}
 		\pause
-		\item Implicit: NIFTy thinks in terms of applying linearizations (no matrix needed)
+		\item Memory-efficient
+		\begin{itemize}
+			\item Implicit linearizations instead of matrices
+			\item Design of linearizations makes sharing constants between $J$ and $J^\dagger$ easy
+		\end{itemize}
 		\pause
 		\item Customizable Jacobians
 		\begin{itemize}
@@ -650,7 +654,7 @@
 
 	\vspace{1em}
 	\begin{center}
-		Fast, implicit, and customizable linearizations with the convenience of python
+		Fast, memory-efficient, and customizable linearizations with the convenience of python
 	\end{center}
 
 	\note{* NIFTy is made for astrophysical inference}
