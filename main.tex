@@ -420,9 +420,7 @@
 		}
 	\end{center}
 
-	\note{* Linearization of exp is a diagonal operator}
 	\note{* Note how J_wr depends on exp(x) not x}
-	\note{* weighted reduction is linear and derivative is operator itself}
 \end{frame}
 
 \subsection{Linearizations}
@@ -681,11 +679,7 @@
 
 	\begin{itemize}
 		\item[] Linearizations are convenient concept for AD (especially for $2^\text{nd}$ order minimization)
-		\begin{itemize}
-			\item Never re-evaluates non-linearities
-			\item By NIFTy design incentivizes sharing memory (and code) between $J$ and $J^\dagger$
 		\vspace{2em}
-		\end{itemize}
 		\item[] Building your own AD is actually pretty simple
 	\end{itemize}
 
