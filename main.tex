@@ -280,7 +280,7 @@
 
 	\pause
 	\begin{center}
-		Numerical Information Field Theory = \colorbox{yellow}{DIY AD to make $\partial^\dagger \partial H  \approx J_{f}^\dagger \widehat{\tilde{L}} J_{f} + 1$ fast}
+		Numerical Information Field Theory = \colorbox{yellow}{DIY AD to make $\partial^\dagger \partial H  \approx J_{f}^\dagger \widehat{\tilde{L}} J_{f} + 1$ efficient}
 		\\ + (lots of statistics)
 	\end{center}
 
@@ -312,14 +312,26 @@
 			p_{n}
 		\end{bmatrix}
 	\end{align*}
+\end{frame}
+
+\begin{frame}
+	\frametitle{\insertsection}
+	\framesubtitle{\insertsubsection}
+
+	\begin{equation*}
+		f = \text{weighted\_reduction} \circ \exp
+	\end{equation*}
+
+	$\partial^\dagger \partial H\approx J_{f}^\dagger \widehat{\tilde{L}} J_{f} + 1$ efficient iff $J_f \text{ and } J^\dagger_f$ efficient iff $J_f \text{ and } J^\dagger_f$
+	\begin{itemize}
+		\item fast (e.g. skip non-linearities)
+		\item memory-efficient (e.g. implicit)
+		\item customizable (when necessary)
+	\end{itemize}
 
 	\pause
 	\vspace{1em}
-	\begin{center}
-		$\partial^\dagger \partial H\approx J_{f}^\dagger \widehat{\tilde{L}} J_{f} + 1$ efficient iff $J_f \text{ and } J^\dagger_f$ efficient iff $J_f \text{ and } J^\dagger_f$ \colorbox{yellow}{fast} (e.g. skip non-linearities), \colorbox{yellow}{memory-efficient} (e.g. implicit) and \colorbox{yellow}{customizable} when necessary
-		\vspace{0.5em}
-		\\ here: no $\exp$ and always compute weighted reduction on the fly
-	\end{center}
+	here: $J_f$ and $J_f^\dagger$ should have no $\exp$ and always compute weighted reduction on the fly
 
 	\note{* constraints are essential; exp about seven times slower than mul}
 	\note{* even current state-of-the-art AD models fail to fulfill them}
@@ -335,14 +347,12 @@
 
 	\pause
 	\vspace{1em}
-	Think of \{linearization $\leftrightarrow$ Jacobian\} as a function of two variables
+	Think of \{linearization $\leftrightarrow$ Jacobian\} as a triplet of
 	\begin{itemize}
-		\item Primals $p$ for the location at which we linearize the function and
-		\item Tangents $t$ to which we apply the linearization at $p$
+		\item Primals $p$ for the location at which we linearize the function
+		\item Function for applying linearization at $p$ to tangents $t$
+		\item Function for applying $\text{linearization}^\dagger$ at $p$ to (co-)tangents $t$
 	\end{itemize}
-	\pause
-	i.e. linearization of operator $\mathrm{op}$ at $p$ is an (implicit) matrix $J_{\mathrm{op},p}$,
-	\\ Jacobian at $p$ applied to $t$ is an (implicit) matrix-vector product $J_{\mathrm{op},p} \cdot t$
 
 	\note{* Note the dependency on the position!}
 	\note{* We want linearization of $f$ for efficient H''}
@@ -368,9 +378,9 @@
 			\mathrm{op}(\mathrm{pl}) & \text{if $\mathrm{pl}$ is of type numerics}
 			\\ \text{Linearization}
 				\begin{pmatrix}
-					\mathrm{op}(\mathrm{pl})
-					\\ J_{\mathrm{op},\mathrm{pl}_p} \cdot \mathrm{pl}
-					\\ \mathrm{pl}^\dagger \cdot J_{\mathrm{op},\mathrm{pl}_p}^\dagger
+					\mathrm{op}(\mathrm{pl}_p)
+					\\ J_{\mathrm{op},\mathrm{pl}_p} \cdot \mathrm{pl}_J
+					\\ \mathrm{pl}_{J^\dagger} \cdot J_{\mathrm{op},\mathrm{pl}_p}^\dagger
 				\end{pmatrix}
 				& \text{if $\mathrm{pl}$ is of type linearization}
 		\end{cases}
@@ -552,7 +562,7 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{itemize}
-		\item Fast
+		\item Fast (minimal overhead for $J_{f}^\dagger \widehat{\tilde{L}} J_{f}$)
 		\begin{itemize}
 			\item Skip non-linearities
 			\item Fast if individual computations are fast
@@ -645,12 +655,12 @@
 
 	\begin{lstlisting}[language=python,escapechar=!]
 		x = ...
-		model = ift.LOSResponse(correlated_field.target, ...) \
+		f = ift.LOSResponse(correlated_field.target, ...) \
 			@ ift.exp \
 			@ x
 
 		x0 = ...
-		j = model(ift.Linearization.make_var(x0))
+		j = f(ift.Linearization.make_var(x0))
 	\end{lstlisting}
 
 	\vspace{1em}
