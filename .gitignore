@@ -1,6 +1,8 @@
 # Ignore backup files
 *~
 
+.vscode
+
 # Ignore LaTeX auxiliary files
 *.pdfpc
 *.aux
