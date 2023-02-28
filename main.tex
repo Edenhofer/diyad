@@ -420,7 +420,7 @@
 		}
 	\end{center}
 
-	\note{* Note how J_wr depends on exp(x) not x}
+	\note{* Note how J_wr depends on exp(p) not p}
 \end{frame}
 
 \subsection{Linearizations}
@@ -467,10 +467,10 @@
 
 	\pause
 	\begin{lstlisting}[language=python,escapechar=!]
-		x0 = 1e-2 * np.arange(0, 9)
+		p0 = 1e-2 * np.arange(0, 9)
 		ones = np.ones((9, ))
-		y = exp(x0)
-		j = exp(exp(Linearization(x0)))
+		y = exp(p0)
+		j = exp(exp(Linearization(p0)))
 		j.T(ones)
 	\end{lstlisting}
 
@@ -494,8 +494,8 @@
 					super_expensive_weights = np.ones(p.shape[1:])  # large weights
 					y[i] = np.sum(p[idx] * super_expensive_weights)
 				return y  # new primals !\pause!
-			def fwd(x): return weighted_reduction(pl(x))  # !\colorbox{yellow}{ref. to self}!
-			def bwd(x): ...
+			def fwd(t): return weighted_reduction(pl(t))  # !\colorbox{yellow}{ref. to self}!
+			def bwd(t): ...
 			return Linearization(weighted_reduction(pl.p), fwd, bwd)
 	\end{lstlisting}
 
@@ -515,15 +515,15 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{lstlisting}[language=python,escapechar=!]
-		def f(x):
-			return weighted_reduction(exp(x))
+		def f(p):
+			return weighted_reduction(exp(p))
 
-		x0 = 1e-2 * np.arange(0, 9)
-		f0 = f(x0)
+		p0 = 1e-2 * np.arange(0, 9)
+		f0 = f(p0)
 		f_ones = np.ones(f0.shape)
 
-		j = f(Linearization(x0))
-		j(x0), j.T(f_ones)
+		j = f(Linearization(p0))
+		j(p0), j.T(f_ones)
 	\end{lstlisting}
 
 	\note{* let's get back to original demo of chained cost function}
@@ -617,14 +617,14 @@
 					y[i] = np.sum(p[idx] * super_expensive_weights)
 				return y  # new primals
 
-			def fwd(x): return weighted_reduction(pl(x))  # new primals
-			def bwd(x):  # !\colorbox{yellow}{implicit $J^\dagger_{\mathrm{wr},\mathrm{pl.p}}$ which re-computes all weights}!
+			def fwd(t): return weighted_reduction(pl(t))  # new primals
+			def bwd(t):  # !\colorbox{yellow}{implicit $J^\dagger_{\mathrm{wr},\mathrm{pl.p}}$ which re-computes all weights}!
 				p_shp = pl.p.reshape(n_cols, -1).shape
-				x_T, indices = np.zeros(p_shp), np.arange(n) % p_shp[0]
+				t_T, indices = np.zeros(p_shp), np.arange(n) % p_shp[0]
 				for i, idx in enumerate(indices):
 					super_expensive_weights = np.ones(p_shp[1:])
-					x_T[idx] += x[i] * super_expensive_weights
-				return pl.T(x_T.reshape(pl.p.shape))
+					t_T[idx] += t[i] * super_expensive_weights
+				return pl.T(t_T.reshape(pl.p.shape))
 			return Linearization(weighted_reduction(pl.p), fwd, bwd)
 	\end{lstlisting}
 \end{frame}
@@ -652,13 +652,13 @@
 	\framesubtitle{\insertsubsection}
 
 	\begin{lstlisting}[language=python,escapechar=!]
-		x = ...
+		p = ...
 		f = ift.LOSResponse(correlated_field.target, ...) \
 			@ ift.exp \
-			@ x
+			@ p
 
-		x0 = ...
-		j = f(ift.Linearization.make_var(x0))
+		p0 = ...
+		j = f(ift.Linearization.make_var(p0))
 	\end{lstlisting}
 
 	\vspace{1em}
